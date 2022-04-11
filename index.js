@@ -289,27 +289,58 @@ Client.prototype.getBindingsForDestination = function(body, _cb) {
 	this.getClient.makeRequest(path, _cb)
 }
 
+function failure(message){
+	return {
+		message
+	}
+}
+
+function notProvided(field){
+	return failure(`${field} not provided`)
+}
+
 Client.prototype.publishMessage = function(body, _cb) {
-	if (!body || !body.vhost) {
-		_cb({
-			message : 'Vhost name not provided'
-		})
+	function fail(field){
+		return _cb(notProvided(field))
+	}
+
+	if (!body || typeof body !== "object"){
+		_cb(failure(`Bad type for body, expected object got ${typeof body}`))
 		return
 	}
-	if (!body.exchange) {
-		_cb({
-			message : 'Exchange name not provided'
-		})
+
+	if (body.vhost === undefined){
+		_cb(fail("vhost"))
 		return
 	}
-	if (!body.properties || !body.routing_key || !body.payload || !body.payload_encoding) {
-		_cb({
-			message : 'Body missing mandatory field: properties, routing_key, payload, payload_encoding'
-		})
+
+	if (body.exchange === undefined){
+		_cb(fail("exchange"))
 		return
 	}
-	var path = '/api/exchanges/' + encodeURIComponent(body.vhost) + '/' + encodeURIComponent(body.exchange) + '/bindings/destination'
-	var post_body = {
+
+	if (body.properties === undefined){
+		_cb(fail("properties"))
+		return
+	}
+
+	if (body.routing_key === undefined){
+		_cb(fail("routing_key"))
+		return
+	}
+
+	if (body.payload === undefined){
+		_cb(fail("payload"))
+		return
+	}
+
+	if (body.payload_encoding === undefined){
+		_cb(fail("payload_encoding"))
+		return
+	}
+
+	let path = '/api/exchanges/' + encodeURIComponent(body.vhost) + '/' + encodeURIComponent(body.exchange) + '/publish'
+	let post_body = {
 		properties : body.properties,
 		routing_key : body.routing_key,
 		payload : body.payload,
